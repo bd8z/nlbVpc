@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  UUID:
+    Description: UUID of stack items
+    Type: String
+  NLBVPCid:
+    Description: VPC whare to place NLB
+    Type: String
+    Default: vpc-xxxxxxxxxxxxxxxxx
+
+  NLBsubnetID:
+    Description: subnetID
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-xxxxxxxxxxxxxxxxx
+
+  #you add more ipaddr&port as much as you want
+  PortToSend01:
+    Description: TCP Port to send
+    Type: Number
+    Default: "3389"
+  Target01IpAddress01:
+    Description: NLB target ip address
+    Type: String
+    Default: "10.0.2.xxx"
+  Target01IpAddress02:
+    Description: NLB target ip address
+    Type: String
+    Default: "10.0.2.xxx"
+
+Resources:
+  NLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties: 
+      IpAddressType: ipv4
+      Name: !Sub "myNLB-${UUID}"
+      Scheme: internal
+      Subnets:
+        - !Ref NLBsubnetID
+      Type: network
+  NLBTargetGroup01:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties: 
+      HealthCheckEnabled: true
+      IpAddressType: ipv4
+      Name: !Sub "myNLBTargetGroup01-${UUID}"
+      Port: !Ref PortToSend01
+      Protocol: TCP
+      Targets: 
+        - Id: !Ref Target01IpAddress01
+          Port: !Ref PortToSend01
+        - Id: !Ref Target01IpAddress02
+          Port: !Ref PortToSend01
+      TargetType: ip
+      VpcId: !Ref NLBVPCid
+  NLBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties: 
+      DefaultActions: 
+        - Type: forward
+          TargetGroupArn: !Ref NLBTargetGroup01
+      LoadBalancerArn: !Ref NLB
+      Port: !Ref PortToSend01
+      Protocol: TCP
